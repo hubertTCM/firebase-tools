@@ -1,0 +1,22 @@
+{
+  "name": "tools",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "tool": "ts-node ./src/index.ts",
+    "villain-cli": "npm run tool -- generate-characters --count 3 --type villain"
+  },
+  "dependencies": {
+    "@types/glob": "^9.0.0",
+    "execa": "^9.6.0",
+    "glob": "^11.0.3",
+    "yargs": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.1",
+    "@types/yargs": "^17.0.34",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
+  }
+}
