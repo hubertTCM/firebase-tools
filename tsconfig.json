@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "outDir": "./dist",
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "noImplicitAny": true,
+    "module": "NodeNext",
+    "target": "ESNext",
+    "removeComments": true,
+    "experimentalDecorators": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "baseUrl": "./",
+    "paths": {
+      "@src/*": ["src/*"]
+    }
+  },
+  "include": ["./src/**/*", "./*.ts"],
+  "exclude": ["node_modules"],
+  "ts-node": {
+    // Do not forget to `npm i -D tsconfig-paths`
+    "require": ["tsconfig-paths/register"]
+  }
+}
