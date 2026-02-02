@@ -1,10 +1,15 @@
 {
-  "name": "tools",
+  "name": "@hoki/firebase-tools",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
     "tool": "ts-node ./src/index.ts",
     "villain-cli": "npm run tool -- generate-characters --count 3 --type villain"
+  },
+  "bin": {
+    "firebase-tool": "dist/index.js"
   },
   "dependencies": {
     "@types/glob": "^9.0.0",
