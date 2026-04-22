@@ -43,11 +43,19 @@ function pushGitTag(tagName: string) {
   console.log(`Pushed git tag ${tagName} to origin.`);
 }
 
-const deployOnly: string[] = ["host", "rules", "indexes"] as const;
+const deployOnly: string[] = [
+  "host",
+  "functions",
+  "rules",
+  "indexes",
+  "storage",
+  "database",
+  "remoteconfig",
+] as const;
 type DeployOnlyType = (typeof deployOnly)[number];
 
 type DeployArgs = {
-  only: DeployOnlyType;
+  only?: DeployOnlyType;
 };
 function handle(options: DeployArgs) {
   const gitVersion = getGitVersion();
@@ -55,16 +63,29 @@ function handle(options: DeployArgs) {
   try {
     process.chdir(projectRoot);
     const { only } = options;
+    build(buildVersion);
+    pushGitTag(buildVersion);
+
+    if (!only) {
+      console.log("Deploying everything...");
+      execSync("npx firebase deploy", { stdio: "inherit" });
+      return;
+    }
+
     switch (only) {
       case "host":
         {
-          build(buildVersion);
-          pushGitTag(buildVersion);
           console.log("Deploying hosting...");
           execSync(`npx firebase deploy --only hosting`, {
             stdio: "inherit",
           });
         }
+        break;
+      case "functions":
+        console.log("Deploying functions...");
+        execSync("npx firebase deploy --only functions", {
+          stdio: "inherit",
+        });
         break;
       case "rules":
         console.log("Deploying firestore rules...");
@@ -78,7 +99,23 @@ function handle(options: DeployArgs) {
           stdio: "inherit",
         });
         break;
-      default:
+      case "storage":
+        console.log("Deploying storage rules...");
+        execSync("npx firebase deploy --only storage", {
+          stdio: "inherit",
+        });
+        break;
+      case "database":
+        console.log("Deploying database rules...");
+        execSync("npx firebase deploy --only database", {
+          stdio: "inherit",
+        });
+        break;
+      case "remoteconfig":
+        console.log("Deploying remote config...");
+        execSync("npx firebase deploy --only remoteconfig", {
+          stdio: "inherit",
+        });
         break;
     }
   } catch (error) {
@@ -89,13 +126,13 @@ function handle(options: DeployArgs) {
 export function buildDeployCommand(argv: Argv) {
   return argv.command<DeployArgs>(
     "deploy",
-    "deploy to firebase, eg: yarn tool -- deploy --only host",
+    "deploy to firebase, eg: yarn tool -- deploy --only functions",
     (yargs) => {
       return yargs.option("only", {
         type: "string",
         choices: deployOnly,
-        default: "host",
-        description: "deploy host only",
+        description:
+          "target to deploy: host, functions, rules, indexes, storage, database, remoteconfig. Omit to deploy everything.",
       });
     },
     handle,
