@@ -6,7 +6,8 @@
     "build": "tsc",
     "prepare": "npm run build",
     "tool": "ts-node ./src/index.ts",
-    "villain-cli": "npm run tool -- generate-characters --count 3 --type villain"
+    "villain-cli": "npm run tool -- generate-characters --count 3 --type villain",
+    "release": "semantic-release"
   },
   "bin": {
     "firebase-tool": "dist/index.js"
@@ -18,8 +19,11 @@
     "yargs": "^18.0.0"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
     "@types/node": "^24.9.1",
     "@types/yargs": "^17.0.34",
+    "semantic-release": "^25.0.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
