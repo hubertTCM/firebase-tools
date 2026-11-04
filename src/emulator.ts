@@ -9,44 +9,55 @@ import { Argv } from "yargs";
 
 const projectRoot = path.resolve(__dirname, "../", "../", "../");
 
-async function findProcessOnMacOrLinux(port: number): Promise<string> {
-  const { stdout } = await execa("lsof", ["-t", "-i", `:${port}`]);
-  return stdout.trim();
+// Only listeners: clients connected to the port (e.g. a browser) must survive
+async function findProcessesOnMacOrLinux(port: number): Promise<string[]> {
+  // lsof exits 1 when nothing matches, which is the normal "port is free" case
+  const { stdout } = await execa(
+    "lsof",
+    ["-t", "-i", `:${port}`, "-sTCP:LISTEN"],
+    { reject: false },
+  );
+  return stdout.split(/\s+/).filter(Boolean);
 }
 
-async function findProcessOnWindows(port: number): Promise<string> {
-  const command = `netstat -ano | findstr :${port}`;
-
-  const { stdout } = await execa(command, { shell: true });
-  const lines = stdout.trim().split("\n");
-  const processInfo = lines.find((line) => line.includes(`:${port}`));
-
-  if (processInfo) {
-    const parts = processInfo.trim().split(/\s+/);
-    return parts[parts.length - 1];
-  }
-  return "";
+async function findProcessesOnWindows(port: number): Promise<string[]> {
+  const { stdout } = await execa(`netstat -ano | findstr :${port}`, {
+    shell: true,
+    reject: false,
+  });
+  const pids = stdout
+    .split("\n")
+    .map((line) => line.trim().split(/\s+/))
+    // Local address (2nd column) must be exactly this port, e.g. 0.0.0.0:8080
+    .filter((parts) => parts[1]?.endsWith(`:${port}`))
+    .map((parts) => parts[parts.length - 1]);
+  return pids;
 }
 
 async function killProcessOnPort(port: number): Promise<void> {
-  const platform = os.platform();
-  let pid = "";
+  const isWindows = os.platform() === "win32";
+  const pids = [
+    ...new Set(
+      isWindows
+        ? await findProcessesOnWindows(port)
+        : await findProcessesOnMacOrLinux(port),
+    ),
+  ].filter((pid) => pid !== "0" && pid !== String(process.pid));
 
-  try {
-    if (platform === "win32") {
-      pid = await findProcessOnWindows(port);
-      await execa("taskkill", ["/F", "/PID", `${pid}`]);
-    } else {
-      pid = await findProcessOnMacOrLinux(port);
-      await execa("kill", ["-9", `${pid}`]);
-    }
-  } catch (error) {
-    if (error instanceof Error) {
+  // Nothing listening: nothing to do
+  for (const pid of pids) {
+    try {
+      if (isWindows) {
+        await execa("taskkill", ["/F", "/PID", pid]);
+      } else {
+        await execa("kill", ["-9", pid]);
+      }
+      console.log(`✅ Killed process ${pid} on port ${port}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       console.error(
-        `❌ Failed to kill process on port ${port}: ${error.message}`,
+        `❌ Failed to kill process ${pid} on port ${port}: ${message}`,
       );
-    } else {
-      console.error(`❌ Failed to kill process on port ${port}`, error);
     }
   }
 }
